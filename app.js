@@ -203,5 +203,5 @@ app.command('/update', async ({ command, ack, say }) => {
 (async () => {
 	// Start the app
 	await app.start(process.env.PORT || 3000);
-	console.log('⚡️ Bolt app is running!', 'test');
+	console.log('⚡️ Bolt app is running!');
 })();

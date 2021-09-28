@@ -14,6 +14,7 @@ provider:
     SLACK_APP_TOKEN: ${env:SLACK_APP_TOKEN}
     SLACK_CLIENT_ID:  ${env:SLACK_CLIENT_ID}
     SLACK_CLIENT_SECRET:  ${env:SLACK_CLIENT_SECRET}
+    SLACK_WEBHOOK:  ${env:SLACK_WEBHOOK}
     BREATHE_TOKEN: ${env:BREATHE_TOKEN}
 # public functions
 functions:

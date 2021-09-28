@@ -1,7 +1,7 @@
 const { App, AwsLambdaReceiver } = require("@slack/bolt");
 const axios = require("axios");
 const { Employees, Sicknesses } = require("./src/breatheHR");
-const botURL = "https://hooks.slack.com/services/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";
+const botURL = "https://hooks.slack.com/services/" + process.env.SLACK_WEBHOOK;
 const awsLambdaReceiver = new AwsLambdaReceiver({
 	signingSecret: process.env.SLACK_SIGNING_SECRET
 });

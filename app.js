@@ -6,6 +6,16 @@ const awsLambdaReceiver = new AwsLambdaReceiver({
 	signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
+const sickness_code = {
+	"373707" : "Headache / migraine",
+	"373708" : "Digestive / Stomach",
+	"373709" : "Cough, Cold, Flu",
+	"373710" : "Psychiatric / Stress",
+	"373711" : "Work Related Injury",
+	"373712" : "Non-work related injury",
+	"373713" : "Other"
+}
+
 // Initializes your app with your bot token and the AWS Lambda ready receiver
 const app = new App({
 	token: process.env.SLACK_BOT_TOKEN,
@@ -26,6 +36,20 @@ app.shortcut("sickness", async ({ shortcut, body, ack, client }) => {
 		}
 		return d.toISOString().substr(0, 10);
 	})();
+
+	const codes = Object.keys(sickness_code);
+	const label = Object.values(sickness_code);
+	const options = codes.map((value, i) => {
+		return {
+			text: {
+				type: "plain_text",
+				text: label[i],
+				emoji: true,
+			},
+			value: value,
+		};
+	});
+
 	await client.views.open({
 		trigger_id: body.trigger_id,
 		view: {
@@ -107,64 +131,7 @@ app.shortcut("sickness", async ({ shortcut, body, ack, client }) => {
 							text: "Select an item",
 							emoji: true,
 						},
-						options: [
-							{
-								text: {
-									type: "plain_text",
-									text: "Cough, Cold, Flu",
-									emoji: true,
-								},
-								value: "364545",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Digestive / Stomach",
-									emoji: true,
-								},
-								value: "364544",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Headache / migraine",
-									emoji: true,
-								},
-								value: "364543",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Non-work related injury",
-									emoji: true,
-								},
-								value: "364548",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Other",
-									emoji: true,
-								},
-								value: "364549",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Psychiatric / Stress",
-									emoji: true,
-								},
-								value: "364546",
-							},
-							{
-								text: {
-									type: "plain_text",
-									text: "Work Related Injury",
-									emoji: true,
-								},
-								value: "364547",
-							},
-						],
+						options: options,
 						action_id: "sickness_type-action",
 					},
 					label: {
@@ -210,9 +177,9 @@ app.view("sickness-modal", async ({ ack, body, context, client }) => {
 			if (date_2) {
 				date_2 = new Date(date_2);
 				if (date_2.getTime() - date_1.getTime() > 0) {
-					return date_2.toLocaleDateString();
+					return date_2.toLocaleDateString('en-GB');
 				} else {
-					return date_1.toLocaleDateString();
+					return date_1.toLocaleDateString('en-GB');
 				}
 			}
 			return null;
@@ -220,30 +187,32 @@ app.view("sickness-modal", async ({ ack, body, context, client }) => {
 		const sicknesstype_id = answer[2]["sickness_type-action"]["selected_option"].value;
 		const reason = answer[3]["reason-action"].value;
 		const params = {
-			start_date: start_date,
-			half_start_am_pm: "am",
-			end_date: end_date,
-			company_sicknesstype_id: sicknesstype_id,
-			reason: reason,
-		};
-		let text;
-		try {
-			const results = await currentEmployee.createSickness(params);
-			text = "Wish you a speedy recovery! See you soon!";
-		} catch (error) {
-			text = "Something went wrong with the BreatheHR API, please check try on the website ";
-		}
-
-		axios({
 			url: botURL,
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
 			data: {
-				text: text
+				text: "Something went wrong with the BreatheHR API, please check try on the website"
 			},
-		});
+		}
+
+		try {
+			const results = await currentEmployee.createSickness({
+				start_date: start_date,
+				half_start_am_pm: "am",
+				end_date: end_date,
+				company_sicknesstype_id: sicknesstype_id,
+				reason: reason,
+			});
+			params.data.text = "Wish you a speedy recovery! See you soon!"
+			await axios(params);
+			console.log('Finished async 210');
+		} catch (error) {
+			console.warn(error);
+			await axios(params);
+		}
+
 	} catch (error) {
 		console.warn(error);
 	}
@@ -380,38 +349,37 @@ app.view("leave-modal", async ({ ack, body, context, client }) => {
 			if (date_2) {
 				date_2 = new Date(date_2);
 				if (date_2.getTime() - date_1.getTime() > 0) {
-					return date_2.toLocaleDateString();
+					return date_2.toLocaleDateString('en-GB');
 				}
 			}
 			return start_date;
 		})();
 		const params = {
-			start_date: start_date,
-			end_date: end_date,
-			half_start_am_pm: null,
-			half_end_am_pm: null,
-			type: "Holiday",
-			notes: answer[2]["notes-action"].value,
-		};
-		let text;
-		try {
-			const results = await currentEmployee.createLeaveRequests(params);
-			text = `You have sucesfully booked a leave from ${start_date} to ${end_date}.`;
-		} catch (error) {
-			text = "Booking non authorized via API, please check on BreatheHR";
-		}
-
-		axios({
 			url: botURL,
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
 			data: {
-				text: text,
+				text: "Booking non authorized via API, please check on BreatheHR"
 			},
-		});
-		return null;
+		}
+		try {
+			const results = await currentEmployee.createLeaveRequests({
+				start_date: start_date,
+				end_date: end_date,
+				half_start_am_pm: null,
+				half_end_am_pm: null,
+				type: "Holiday",
+				notes: answer[2]["notes-action"].value,
+			});
+			params.data.text = `You have sucesfully booked a leave from ${start_date} to ${end_date}.`;
+			await axios(params);
+			console.log('Finished async 378');
+		} catch (error) {
+			console.warn(error);
+			await axios(params);
+		}
 	} catch (error) {
 		console.warn(error);
 	}

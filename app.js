@@ -192,13 +192,16 @@ app.shortcut("sickness", async ({ shortcut, body, ack, client }) => {
 	});
 });
 
-app.view("sickness-modal", async ({ ack, body, context }) => {
+app.view("sickness-modal", async ({ ack, body, context, client }) => {
 	try {
 		await ack();
 		const { values } = body.view.state;
 		const answer = Object.values(values);
+		const info = await client.users.info({
+			user: body.user.id,
+		});
 		const users = await new Employees().get();
-		const currentUser = users.filter((item) => item.email == "diego@maeoka.dev")[0];
+		const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
 		const currentEmployee = new Employees(currentUser.id);
 		const start_date = answer[0]["start_date-action"]["selected_date"].split("-").reverse().join("/");
 		const end_date = (() => {
@@ -359,13 +362,16 @@ app.shortcut("leave", async ({ shortcut, body, ack, client }) => {
 	});
 });
 
-app.view("leave-modal", async ({ ack, body, context }) => {
+app.view("leave-modal", async ({ ack, body, context, client }) => {
 	try {
 		await ack();
 		const { values } = body.view.state;
 		const answer = Object.values(values);
+		const info = await client.users.info({
+			user: body.user.id,
+		});
 		const users = await new Employees().get();
-		const currentUser = users.filter((item) => item.email == "diego@maeoka.dev")[0];
+		const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
 		const currentEmployee = new Employees(currentUser.id);
 		const start_date = answer[0]["start_date-action"]["selected_date"].split("-").reverse().join("/");
 		const end_date = (() => {
@@ -434,20 +440,4 @@ app.event("app_home_opened", async ({ event, client }) => {
 module.exports.slack = async (event, context, callback) => {
 	const handler = await awsLambdaReceiver.start();
 	return handler(event, context, callback);
-};
-
-module.exports.home = async (event) => {
-
-	const pacientes = [
-		{ id: 1, nome: "Maria", dataNascimento: "1984-11-01" },
-		{ id: 2, nome: "Joao", dataNascimento: "1980-01-16" },
-		{ id: 3, nome: "Jose", dataNascimento: "1998-06-06" },
-	];
-	return {
-		statusCode: 200,
-		// body: JSON.stringify({pacientes}, null, 2),
-		body: JSON.stringify({
-			SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN
-		})
-	};
 };

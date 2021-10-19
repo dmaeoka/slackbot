@@ -15,8 +15,9 @@ class Breathe {
 
 	execute(method = "GET", endpoint, parameters = "") {
 		try {
-			// const url = `https://api.sandbox.breathehr.info/v1/${endpoint}${parameters}`;
-			const url = `https://api.breathehr.com/v1/${endpoint}${parameters}`;
+			let url = this.token.includes("sandbox") ? 'https://api.sandbox.breathehr.info' : `https://api.breathehr.com`;
+			url += `/v1/${endpoint}${parameters}`;
+
 			return axios({
 				url,
 				method,

@@ -1,25 +1,18 @@
-const { App, AwsLambdaReceiver } = require("@slack/bolt");
-const axios = require("axios");
-const { Employees, Sicknesses } = require("./src/breatheHR");
-const botURL = "https://hooks.slack.com/services/" + process.env.SLACK_WEBHOOK;
-const awsLambdaReceiver = new AwsLambdaReceiver({
-	signingSecret: process.env.SLACK_SIGNING_SECRET
-});
+"use strict";
+const SLACK_SIGNING_SECRET = process.env.KEY_1;
+const SICKNESS = process.env.KEY_2;
+const SLACK_BOT_TOKEN = process.env.KEY_3;
 
-const sickness_code = {
-	"373707" : "Headache / migraine",
-	"373708" : "Digestive / Stomach",
-	"373709" : "Cough, Cold, Flu",
-	"373710" : "Psychiatric / Stress",
-	"373711" : "Work Related Injury",
-	"373712" : "Non-work related injury",
-	"373713" : "Other"
-}
+const { App, AwsLambdaReceiver } = require("@slack/bolt");
+const { Employees } = require("./src/breatheHR");
+const awsLambdaReceiver = new AwsLambdaReceiver({
+	signingSecret: SLACK_SIGNING_SECRET
+});
+const sickness_code = JSON.parse(SICKNESS || "{}");
 
 // Initializes your app with your bot token and the AWS Lambda ready receiver
 const app = new App({
-	token: process.env.SLACK_BOT_TOKEN,
-	appToken: process.env.SLACK_APP_TOKEN,
+	token: SLACK_BOT_TOKEN,
 	receiver: awsLambdaReceiver,
 	processBeforeResponse: true,
 });
@@ -167,9 +160,6 @@ app.view("sickness-modal", async ({ ack, body, context, client }) => {
 		const info = await client.users.info({
 			user: body.user.id,
 		});
-		const users = await new Employees().get();
-		const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
-		const currentEmployee = new Employees(currentUser.id);
 		const start_date = answer[0]["start_date-action"]["selected_date"].split("-").reverse().join("/");
 		const end_date = (() => {
 			let date_1 = new Date(answer[0]["start_date-action"]["selected_date"]);
@@ -186,33 +176,30 @@ app.view("sickness-modal", async ({ ack, body, context, client }) => {
 		})();
 		const sicknesstype_id = answer[2]["sickness_type-action"]["selected_option"].value;
 		const reason = answer[3]["reason-action"].value;
-		const params = {
-			url: botURL,
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			data: {
-				text: "Something went wrong with the BreatheHR API, please check try on the website"
-			},
-		}
+		let msg;
 
 		try {
-			const results = await currentEmployee.createSickness({
+			const users = await new Employees().get();
+			const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
+			const currentEmployee = new Employees(currentUser.id);
+			await currentEmployee.createSickness({
 				start_date: start_date,
 				half_start_am_pm: "am",
 				end_date: end_date,
 				company_sicknesstype_id: sicknesstype_id,
 				reason: reason,
 			});
-			params.data.text = "Wish you a speedy recovery! See you soon!"
-			await axios(params);
-			console.log('Finished async 210');
+			msg = 'Wish you a speedy recovery! See you soon!';
+
 		} catch (error) {
 			console.warn(error);
-			await axios(params);
+			msg = 'Something went wrong with the BreatheHR API, please try on the website';
 		}
 
+		await client.chat.postMessage({
+			channel: body.user.id,
+			text: msg
+		});
 	} catch (error) {
 		console.warn(error);
 	}
@@ -339,9 +326,6 @@ app.view("leave-modal", async ({ ack, body, context, client }) => {
 		const info = await client.users.info({
 			user: body.user.id,
 		});
-		const users = await new Employees().get();
-		const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
-		const currentEmployee = new Employees(currentUser.id);
 		const start_date = answer[0]["start_date-action"]["selected_date"].split("-").reverse().join("/");
 		const end_date = (() => {
 			let date_1 = new Date(answer[0]["start_date-action"]["selected_date"]);
@@ -354,18 +338,13 @@ app.view("leave-modal", async ({ ack, body, context, client }) => {
 			}
 			return start_date;
 		})();
-		const params = {
-			url: botURL,
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			data: {
-				text: "Booking non authorized via API, please check on BreatheHR"
-			},
-		}
+		let msg;
+
 		try {
-			const results = await currentEmployee.createLeaveRequests({
+			const users = await new Employees().get();
+			const currentUser = users.filter((item) => item.email == info.user.profile.email)[0];
+			const currentEmployee = new Employees(currentUser.id);
+			await currentEmployee.createLeaveRequests({
 				start_date: start_date,
 				end_date: end_date,
 				half_start_am_pm: null,
@@ -373,13 +352,16 @@ app.view("leave-modal", async ({ ack, body, context, client }) => {
 				type: "Holiday",
 				notes: answer[2]["notes-action"].value,
 			});
-			params.data.text = `You have sucesfully booked a leave from ${start_date} to ${end_date}.`;
-			await axios(params);
-			console.log('Finished async 378');
+			msg = `You have sucesfully booked a leave from ${start_date} to ${end_date}.`;
 		} catch (error) {
+			msg = "Booking non authorized via API, please try on BreatheHR";
 			console.warn(error);
-			await axios(params);
 		}
+
+		await client.chat.postMessage({
+			channel: body.user.id,
+			text: msg
+		});
 	} catch (error) {
 		console.warn(error);
 	}
@@ -404,8 +386,7 @@ app.event("app_home_opened", async ({ event, client }) => {
 	});
 });
 
-// Handle the Lambda function event
 module.exports.slack = async (event, context, callback) => {
-	const handler = await awsLambdaReceiver.start();
-	return handler(event, context, callback);
+	const h = await awsLambdaReceiver.start();
+	return h(event, context, callback);
 };

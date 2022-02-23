@@ -1,9 +1,10 @@
 const axios = require("axios");
 const objectToQueryString = require("./uri");
+const BREATHE_TOKEN = Buffer.from(process.env.KEY_4, 'base64').toString('ascii');
 
 class Breathe {
 	constructor() {
-		this.token = process.env.BREATHE_TOKEN;
+		this.token = BREATHE_TOKEN;
 	}
 
 	urlParams(parameters = {}) {

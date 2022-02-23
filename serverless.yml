@@ -1,3 +1,5 @@
+org: maeoka
+app: infobot
 service: infobot-slack
 frameworkVersion: '2'
 useDotenv: true
@@ -9,13 +11,12 @@ provider:
   stage: prod
   region: eu-west-2
   environment:
-    SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
-    SLACK_BOT_TOKEN: ${env:SLACK_BOT_TOKEN}
-    SLACK_APP_TOKEN: ${env:SLACK_APP_TOKEN}
-    SLACK_CLIENT_ID:  ${env:SLACK_CLIENT_ID}
-    SLACK_CLIENT_SECRET:  ${env:SLACK_CLIENT_SECRET}
-    SLACK_WEBHOOK:  ${env:SLACK_WEBHOOK}
-    BREATHE_TOKEN: ${env:BREATHE_TOKEN}
+    SLACK_SIGNING_SECRET: ${env:KEY_1}
+    SLACK_BOT_TOKEN: ${env:KEY_3}
+    SLACK_APP_TOKEN: ${env:KEY_5}
+    SLACK_CLIENT_ID:  ${env:KEY_6}
+    SLACK_CLIENT_SECRET:  ${env:KEY_7}
+    BREATHE_TOKEN: ${env:KEY_4}
 
 # public functions
 functions:

@@ -6,7 +6,7 @@ useDotenv: true
 # AWS
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs18.x
   lambdaHashingVersion: 20201221
   stage: prod
   region: eu-west-2
@@ -14,8 +14,8 @@ provider:
     SLACK_SIGNING_SECRET: ${env:KEY_1}
     SLACK_BOT_TOKEN: ${env:KEY_3}
     SLACK_APP_TOKEN: ${env:KEY_5}
-    SLACK_CLIENT_ID:  ${env:KEY_6}
-    SLACK_CLIENT_SECRET:  ${env:KEY_7}
+    SLACK_CLIENT_ID: ${env:KEY_6}
+    SLACK_CLIENT_SECRET: ${env:KEY_7}
     BREATHE_TOKEN: ${env:KEY_4}
 
 # public functions
